@@ -5,7 +5,11 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
 <body>
-<p th:text="'Hello, ' + ${title}" /><br/>
+<p th:text="${result}" />
+<input type="text" th:value="${user.id}"><br/>
+<input type="text" th:value="${user.username}"><br/>
+<input type="text" th:value="${user.password}"><br/>
+<input type="text" th:value="${user.age}"><br/>
 
 <script>
 

@@ -2,6 +2,7 @@ package com.example.controller;
 
 import com.example.entity.User;
 import com.example.service.UserService;
+import com.example.utils.RedisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,8 @@ public class UserLoginController {
     private static final Logger logger = LoggerFactory.getLogger(UserLoginController.class);
     @Autowired
     private UserService userService;
+    @Autowired
+    private RedisUtil redisUtil;
 
     /**
      * 跳转到用户登录页面
@@ -35,15 +38,32 @@ public class UserLoginController {
     public ModelAndView userLogin(@RequestParam("username") String username, @RequestParam("password") String password, HttpServletRequest request, ModelAndView mv){
 
         mv.setViewName("/result");
-        User user = userService.userLogin(username,password);
-        if(user != null){
-            mv.addObject("title","查询成功！");
-            logger.info(username+",查询成功！");
+        Object o = redisUtil.get(username);
+        if(o!=null){
+            User u = (User)o;
+            mv.addObject("user",u);
+            mv.addObject("result","查询缓存成功！");
+            logger.info(username+",查询缓存成功，直接返回！");
         }else{
-            mv.addObject("title","查询失败！");
-            logger.info(username+",查询失败！");
+            User user = userService.userLogin(username,password);
+            if(user!=null){
+                mv.addObject("user",user);
+                boolean b = redisUtil.put(username,user,20000);
+                if(b == true){
+                    mv.addObject("result","查询数据库成功并放入redis缓存！");
+                    logger.info(username+",查询数据库成功并放入redis缓存！");
+                }else{
+                    mv.addObject("result","查询数据库成功，放入redis缓存失败！");
+                    logger.info(username+",查询数据库成功，放入redis缓存失败！");
+                }
+            }else{
+                mv.addObject("result","查询数据库失败！");
+                logger.info(username+",查询缓存和数据库失败！");
+            }
         }
         return mv;
     }
+
+
 
 }
